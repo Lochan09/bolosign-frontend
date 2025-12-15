@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import axios from 'axios';
 import SignatureCanvas from 'react-signature-canvas';
@@ -18,17 +18,17 @@ function App() {
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [documentData, setDocumentData] = useState(null);
-  
+
   // Signature state
   const [signatureField, setSignatureField] = useState(null);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [applyToAllPages, setApplyToAllPages] = useState(false);
-  
+
   // Review state
   const [reviewMode, setReviewMode] = useState(false);
   const [signedPdfUrl, setSignedPdfUrl] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Refs
   const signatureRef = useRef(null);
   const pdfContainerRef = useRef(null);
@@ -38,21 +38,30 @@ function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append('pdf', file);
-
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/api/pdf/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result.split(',')[1]; // Remove data:application/pdf;base64, prefix
+        
+        const response = await axios.post(`${API_URL}/api/pdf/upload`, {
+          pdfData: base64Data,
+          filename: file.name
+        });
 
-      setDocumentData(response.data);
-      setPdfFile(URL.createObjectURL(file));
+        setDocumentData(response.data);
+        setPdfFile(URL.createObjectURL(file));
+        setIsLoading(false);
+      };
+      reader.onerror = () => {
+        alert('Failed to read PDF file.');
+        setIsLoading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Failed to upload PDF. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -72,7 +81,7 @@ function App() {
 
     const canvas = document.querySelector('.react-pdf__Page__canvas');
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -103,7 +112,7 @@ function App() {
     setIsLoading(true);
     try {
       // Determine which pages to sign
-      const pagesArray = applyToAllPages 
+      const pagesArray = applyToAllPages
         ? Array.from({ length: numPages }, (_, i) => i + 1)
         : [signatureField.page];
 
@@ -117,7 +126,7 @@ function App() {
       const canvasRect = pdfCanvas.getBoundingClientRect();
       const renderedWidth = canvasRect.width;
       const renderedHeight = canvasRect.height;
-      
+
       // Normalize coordinates to 0-1 range for backend processing
       const normalizedCoordinates = {
         x: signatureField.x / renderedWidth,
@@ -172,7 +181,7 @@ function App() {
     <div className="app-container">
       {/* Header */}
       <header className="header">
-        <h1>📝 BoloSign</h1>
+        <h1> BoloSign</h1>
         <p className="tagline">Simple & Secure Document Signing</p>
       </header>
 
@@ -180,7 +189,7 @@ function App() {
       {!pdfFile ? (
         <section className="upload-section">
           <div className="upload-box">
-            <div className="upload-icon">📄</div>
+            <div className="upload-icon"></div>
             <h2>Upload Your Document</h2>
             <p>Select a PDF file to get started</p>
             <input
@@ -215,7 +224,7 @@ function App() {
                   className="pdf-page"
                   onLoadSuccess={onPageLoadSuccess}
                 />
-                
+
                 {/* Signature Field Overlay */}
                 {signatureField && signatureField.page === currentPage && !reviewMode && (
                   <div
@@ -227,7 +236,7 @@ function App() {
                       height: `${signatureField.height}px`
                     }}
                   >
-                    {applyToAllPages ? '✍️ All Pages' : '✍️ Sign Here'}
+                    {applyToAllPages ? ' All Pages' : ' Sign Here'}
                   </div>
                 )}
               </div>
@@ -241,7 +250,7 @@ function App() {
                   disabled={currentPage <= 1}
                   className="page-btn"
                 >
-                  ← Previous
+                   Previous
                 </button>
                 <span className="page-info">
                   Page {currentPage} of {numPages}
@@ -251,7 +260,7 @@ function App() {
                   disabled={currentPage >= numPages}
                   className="page-btn"
                 >
-                  Next →
+                  Next 
                 </button>
               </nav>
             )}
@@ -262,18 +271,18 @@ function App() {
             {!reviewMode && !signedPdfUrl ? (
               <>
                 <div className="control-section">
-                  <h3>📍 Place Signature</h3>
+                  <h3> Place Signature</h3>
                   <p className="hint">Click anywhere on the PDF to place your signature</p>
-                  
+
                   {signatureField && (
                     <div className="field-info">
-                      ✓ Signature placed on page {signatureField.page}
+                       Signature placed on page {signatureField.page}
                     </div>
                   )}
                 </div>
 
                 <div className="control-section">
-                  <h3>⚙️ Options</h3>
+                  <h3> Options</h3>
                   <label className="checkbox-label">
                     <input
                       type="checkbox"
@@ -289,20 +298,20 @@ function App() {
                   disabled={!signatureField || isLoading}
                   className="btn-primary"
                 >
-                  {isLoading ? 'Processing...' : '✍️ Sign Document'}
+                  {isLoading ? 'Processing...' : ' Sign Document'}
                 </button>
               </>
             ) : (
               <div className="review-section">
-                <div className="success-icon">✅</div>
+                <div className="success-icon"></div>
                 <h3>Document Signed!</h3>
                 <p>Your document has been signed successfully.</p>
                 <div className="review-actions">
                   <button onClick={downloadSignedPDF} className="btn-download">
-                    📥 Download PDF
+                     Download PDF
                   </button>
                   <button onClick={resetProcess} className="btn-secondary">
-                    🔄 Sign Another
+                     Sign Another
                   </button>
                 </div>
               </div>
@@ -315,7 +324,7 @@ function App() {
       {showSignatureModal && (
         <div className="modal-overlay" onClick={() => setShowSignatureModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>✍️ Draw Your Signature</h2>
+            <h2> Draw Your Signature</h2>
             <p className="modal-hint">Use your mouse or touchpad to sign below</p>
             <div className="signature-canvas-wrapper">
               <SignatureCanvas
@@ -326,21 +335,21 @@ function App() {
               />
             </div>
             <div className="modal-actions">
-              <button 
-                onClick={() => signatureRef.current?.clear()} 
+              <button
+                onClick={() => signatureRef.current?.clear()}
                 className="btn-secondary"
               >
                 Clear
               </button>
-              <button 
-                onClick={handleSaveSignature} 
+              <button
+                onClick={handleSaveSignature}
                 className="btn-primary"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing...' : 'Apply Signature'}
               </button>
-              <button 
-                onClick={() => setShowSignatureModal(false)} 
+              <button
+                onClick={() => setShowSignatureModal(false)}
                 className="btn-secondary"
               >
                 Cancel
